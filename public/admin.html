@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin — Innova Schools</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #F0F4F8; color: #333; }
+
+    /* ── Login ── */
+    #login-overlay {
+      position: fixed; inset: 0;
+      background: rgba(13, 71, 161, .96);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 999;
+    }
+    #login-overlay.hidden { display: none; }
+    .login-card {
+      background: #fff; border-radius: 16px; padding: 40px 36px;
+      width: 340px; text-align: center;
+      box-shadow: 0 24px 60px rgba(0,0,0,.3);
+    }
+    .login-card h2 { color: #1565C0; font-size: 1.4rem; margin-bottom: 4px; }
+    .login-card p { color: #888; font-size: .88rem; margin-bottom: 24px; }
+    .login-card input {
+      width: 100%; padding: 11px 14px; border: 1.5px solid #DDD;
+      border-radius: 8px; font-size: .95rem; text-align: center;
+      letter-spacing: 3px; margin-bottom: 14px;
+    }
+    .login-card input:focus { outline: none; border-color: #1565C0; }
+    .login-btn {
+      width: 100%; background: linear-gradient(135deg, #1565C0, #0D47A1);
+      color: #fff; border: none; padding: 12px; border-radius: 8px;
+      font-size: .95rem; font-weight: 700; cursor: pointer;
+    }
+    .login-err { color: #E53935; font-size: .82rem; margin-top: 10px; display: none; }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #0D47A1, #1B5E20);
+      color: #fff; padding: 18px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px;
+    }
+    header h1 { font-size: 1.2rem; }
+    header .badge { background: #FF6B00; padding: 4px 12px; border-radius: 20px; font-size: .78rem; font-weight: 700; }
+
+    /* ── Dashboard ── */
+    .dash { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .stat { background: #fff; border-radius: 10px; padding: 18px 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .stat .num { font-size: 2rem; font-weight: 800; color: #1565C0; }
+    .stat .lbl { color: #999; font-size: .78rem; margin-top: 3px; }
+
+    /* Section header */
+    .sec-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .sec-hdr h2 { color: #1565C0; font-size: 1.2rem; }
+
+    .btn-add { background: #2E7D32; color: #fff; border: none; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: .88rem; font-weight: 700; }
+
+    /* Conference admin cards */
+    .conf-card {
+      background: #fff; border-radius: 12px; padding: 22px 24px;
+      margin-bottom: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      border-left: 4px solid #1565C0;
+    }
+    .conf-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .conf-hdr h3 { color: #1565C0; font-size: 1.05rem; }
+    .date-pill { background: #FF6B00; color: #fff; padding: 3px 11px; border-radius: 14px; font-size: .78rem; font-weight: 700; }
+
+    .conf-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .meta-tag {
+      display: inline-block; padding: 3px 10px; border-radius: 12px;
+      font-size: .76rem; font-weight: 700;
+    }
+    .tag-blue { background: #E3F2FD; color: #1565C0; }
+    .tag-green { background: #E8F5E9; color: #2E7D32; }
+    .tag-orange { background: #FFF3E0; color: #E65100; }
+
+    .link-row { display: flex; gap: 10px; margin-bottom: 14px; }
+    .link-row input {
+      flex: 1; padding: 9px 12px; border: 1.5px solid #DDD; border-radius: 8px; font-size: .88rem;
+    }
+    .link-row input:focus { outline: none; border-color: #1565C0; }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: .83rem; font-weight: 700; transition: opacity .2s; }
+    .btn:hover { opacity: .83; }
+    .btn-primary { background: #1565C0; color: #fff; }
+    .btn-success { background: #2E7D32; color: #fff; }
+    .btn-info    { background: #0288D1; color: #fff; }
+
+    /* Registrations */
+    .regs-section { background: #fff; border-radius: 12px; padding: 24px; margin-top: 28px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+    .filters select, .filters input {
+      padding: 8px 12px; border: 1.5px solid #DDD; border-radius: 8px; font-size: .88rem;
+    }
+    .filters input { min-width: 200px; }
+
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+    th { background: #F5F5F5; padding: 10px 12px; text-align: left; font-weight: 700; color: #666; border-bottom: 2px solid #EEE; white-space: nowrap; }
+    td { padding: 9px 12px; border-bottom: 1px solid #F0F0F0; color: #444; }
+    tr:hover td { background: #FAFAFA; }
+
+    .badge-ok  { background: #E8F5E9; color: #2E7D32; padding: 2px 8px; border-radius: 10px; font-size: .73rem; font-weight: 700; }
+    .badge-pnd { background: #FFF3E0; color: #E65100; padding: 2px 8px; border-radius: 10px; font-size: .73rem; font-weight: 700; }
+
+    /* Modal */
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 500; align-items: center; justify-content: center; }
+    .modal-bg.open { display: flex; }
+    .modal { background: #fff; border-radius: 12px; padding: 28px; max-width: 500px; width: 90%; }
+    .modal-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-hdr h3 { color: #1565C0; }
+    .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #999; }
+    .modal label { display: block; font-size: .82rem; font-weight: 700; color: #555; margin-bottom: 5px; }
+    .modal input, .modal textarea {
+      width: 100%; padding: 9px 12px; border: 1.5px solid #DDD; border-radius: 8px;
+      font-size: .92rem; margin-bottom: 14px; font-family: inherit;
+    }
+    .modal textarea { resize: vertical; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 28px; right: 28px; max-width: 340px;
+      background: #333; color: #fff; padding: 12px 18px;
+      border-radius: 8px; font-size: .88rem; opacity: 0;
+      transition: opacity .3s; z-index: 9999;
+    }
+    .toast.show { opacity: 1; }
+    .toast.ok  { background: #2E7D32; }
+    .toast.err { background: #C62828; }
+
+    @media (max-width: 600px) {
+      .conf-hdr { flex-direction: column; }
+      .link-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-overlay">
+  <div class="login-card">
+    <h2>Panel Administrativo</h2>
+    <p>Innova Schools — Ciclo de Conferencias 2026</p>
+    <input type="password" id="key-input" placeholder="Clave de acceso"
+           onkeypress="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="login-err" id="login-err">Clave incorrecta. Intenta de nuevo.</div>
+  </div>
+</div>
+
+<header>
+  <h1>Panel Administrativo — Conferencias</h1>
+  <span class="badge">Innova Schools 2026</span>
+</header>
+
+<div class="dash" id="dash">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat"><div class="num" id="s-confs">—</div><div class="lbl">Conferencias</div></div>
+    <div class="stat"><div class="num" id="s-regs">—</div><div class="lbl">Registros totales</div></div>
+  </div>
+
+  <!-- Conferences -->
+  <div class="sec-hdr">
+    <h2>Gestión de Conferencias</h2>
+    <button class="btn-add" onclick="openAddModal()">+ Nueva conferencia</button>
+  </div>
+  <div id="confs-list"></div>
+
+  <!-- Registrations -->
+  <div class="regs-section">
+    <div class="sec-hdr">
+      <h2>Registros de padres</h2>
+      <button class="btn btn-info" onclick="exportCSV()">Exportar CSV</button>
+    </div>
+    <div class="filters">
+      <select id="f-conf" onchange="loadRegs()">
+        <option value="">Todas las conferencias</option>
+      </select>
+      <input type="text" id="f-search" placeholder="Buscar por nombre, correo o estudiante..." oninput="filterTable()">
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Conferencia</th><th>Padre/Madre/Tutor</th><th>Correo</th>
+            <th>Teléfono</th><th>Estudiante</th><th>Grado</th><th>Fecha reg.</th>
+          </tr>
+        </thead>
+        <tbody id="regs-body">
+          <tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add Conference Modal -->
+<div class="modal-bg" id="add-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3>Nueva Conferencia</h3>
+      <button class="modal-close" onclick="closeModal('add-modal')">×</button>
+    </div>
+    <label>Nombre *</label>
+    <input type="text" id="n-name" placeholder="Ej: Conferencia 4 — Julio">
+    <label>Fecha *</label>
+    <input type="date" id="n-date">
+    <label>Descripción</label>
+    <textarea id="n-desc" rows="3" placeholder="Descripción breve (opcional)"></textarea>
+    <button class="btn btn-primary" onclick="createConference()" style="width:100%">Crear conferencia</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let adminKey = '';
+  let allRegs  = [];
+
+  /* ── Auth ── */
+  function doLogin() {
+    const k = document.getElementById('key-input').value;
+    fetch('/api/admin/registrations?key=' + encodeURIComponent(k))
+      .then(r => {
+        if (r.ok) {
+          adminKey = k;
+          sessionStorage.setItem('ak', k);
+          document.getElementById('login-overlay').classList.add('hidden');
+          loadAll();
+        } else {
+          document.getElementById('login-err').style.display = 'block';
+        }
+      })
+      .catch(() => { document.getElementById('login-err').style.display = 'block'; });
+  }
+
+  (function tryAutoLogin() {
+    const k = sessionStorage.getItem('ak');
+    if (!k) return;
+    fetch('/api/admin/registrations?key=' + encodeURIComponent(k))
+      .then(r => { if (r.ok) { adminKey = k; document.getElementById('login-overlay').classList.add('hidden'); loadAll(); } });
+  })();
+
+  /* ── Data loading ── */
+  async function loadAll() { await loadConferences(); await loadRegs(); }
+
+  async function loadConferences() {
+    const [cRes, rRes] = await Promise.all([
+      fetch('/api/conferences'),
+      fetch('/api/admin/registrations', { headers: { 'x-admin-key': adminKey } })
+    ]);
+    const confs = await cRes.json();
+    const regs  = await rRes.json();
+
+    document.getElementById('s-confs').textContent = confs.length;
+    document.getElementById('s-regs').textContent  = regs.length;
+
+    // Filter dropdown
+    const fConf = document.getElementById('f-conf');
+    const prev  = fConf.value;
+    fConf.innerHTML = '<option value="">Todas las conferencias</option>' +
+      confs.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    if (prev) fConf.value = prev;
+
+    // Render cards
+    document.getElementById('confs-list').innerHTML = confs.map(c => `
+        <div class="conf-card">
+          <div class="conf-hdr">
+            <h3>${esc(c.name)}</h3>
+            <span class="date-pill">${fmtDate(c.date)}</span>
+          </div>
+          <div class="conf-meta">
+            <span class="meta-tag tag-blue">${c.registrations_count || 0} registros</span>
+          </div>
+          <div class="actions">
+            <button class="btn btn-info" onclick="jumpToRegs('${c.id}')">
+              👁 Ver registros
+            </button>
+          </div>
+        </div>
+      `).join('');
+  }
+
+  async function loadRegs() {
+    const id  = document.getElementById('f-conf').value;
+    const url = '/api/admin/registrations' + (id ? '?conference_id=' + id : '');
+    const r   = await fetch(url, { headers: { 'x-admin-key': adminKey } });
+    allRegs   = await r.json();
+    renderTable(allRegs);
+  }
+
+  function filterTable() {
+    const q = document.getElementById('f-search').value.toLowerCase();
+    renderTable(q
+      ? allRegs.filter(r =>
+          (r.parent_name||'').toLowerCase().includes(q) ||
+          (r.email||'').toLowerCase().includes(q) ||
+          (r.student_name||'').toLowerCase().includes(q))
+      : allRegs
+    );
+  }
+
+  function renderTable(rows) {
+    const tbody = document.getElementById('regs-body');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px">Sin registros</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td><strong>${esc(r.conference_name)}</strong><br><small style="color:#aaa">${fmtDate(r.conference_date)}</small></td>
+        <td>${esc(r.parent_name)}</td>
+        <td><a href="mailto:${esc(r.email)}" style="color:#1565C0">${esc(r.email)}</a></td>
+        <td>${esc(r.phone || '—')}</td>
+        <td>${esc(r.student_name)}</td>
+        <td>${esc(r.grade || '—')}</td>
+        <td style="font-size:.78rem;color:#aaa;white-space:nowrap">${new Date(r.registered_at).toLocaleDateString('es-PE')}</td>
+      </tr>
+    `).join('');
+  }
+
+  function jumpToRegs(id) {
+    document.getElementById('f-conf').value = id;
+    loadRegs();
+    document.querySelector('.regs-section').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function exportCSV() {
+    if (!allRegs.length) { toast('No hay registros para exportar', 'err'); return; }
+    const hdrs = ['Conferencia','Fecha','Padre/Madre/Tutor','Correo','Teléfono','Estudiante','Grado','Fecha Registro'];
+    const rows = allRegs.map(r => [
+      r.conference_name, r.conference_date, r.parent_name, r.email,
+      r.phone||'', r.student_name, r.grade||'', r.registered_at
+    ]);
+    const csv  = [hdrs, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    const a    = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'registros-conferencias.csv' });
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  function openAddModal() { document.getElementById('add-modal').classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  async function createConference() {
+    const name = document.getElementById('n-name').value.trim();
+    const date = document.getElementById('n-date').value;
+    const desc = document.getElementById('n-desc').value.trim();
+    if (!name || !date) { toast('Nombre y fecha son requeridos', 'err'); return; }
+    const r = await fetch('/api/admin/conference', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+      body: JSON.stringify({ name, date, description: desc })
+    });
+    if (r.ok) {
+      toast('Conferencia creada', 'ok');
+      closeModal('add-modal');
+      ['n-name','n-date','n-desc'].forEach(id => document.getElementById(id).value = '');
+      loadAll();
+    } else { toast('Error al crear la conferencia', 'err'); }
+  }
+
+  /* ── Helpers ── */
+  function fmtDate(d) {
+    return new Date(d + 'T12:00:00').toLocaleDateString('es-PE', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function toast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className   = 'toast show ' + (type||'');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.className = 'toast', 3500);
+  }
+</script>
+</body>
+</html>

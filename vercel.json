@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "functions": {
+    "api/handler.js": { "maxDuration": 30 }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/handler" }
+  ],
+  "crons": [
+    { "path": "/api/cron/reminders", "schedule": "0 13 * * *" }
+  ]
+}

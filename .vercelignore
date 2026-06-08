@@ -1,0 +1,8 @@
+functions/
+node_modules/
+conferences.db
+*.db
+.env
+server.js
+database.js
+scheduler.js

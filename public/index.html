@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Conferencias — Innova Schools</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #F0F4F8; color: #333; min-height: 100vh; }
+
+    /* ── Banner — Proporción áurea (φ = 1.618) ──────────────────────────────
+       División horizontal : logo 38.2 % (1/φ²) | título 61.8 % (1/φ)
+       Escala tipográfica  : 1 rem → ×φ → 1.618 rem
+       Espaciado Fibonacci : 8 · 13 · 21 · 34 px
+    ── */
+    header {
+      background: #fff;
+      display: flex;
+      align-items: stretch;
+      border-bottom: 4px solid #1565C0;
+    }
+
+    /* Sección logo: 38.2 % = 1/φ² */
+    header .logo-container {
+      flex: 0 0 38.2%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 21px 34px;        /* Fibonacci 21 / 34 */
+      gap: 8px;                  /* Fibonacci 8 */
+      border-right: 1px solid #e0e8f4;
+    }
+    header .logo-container img {
+      width: 61.8%;              /* 1/φ del contenedor */
+      max-width: 185px;
+      min-width: 90px;
+    }
+    header .campus-tag {
+      color: #2E7D32;
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* Sección título: 61.8 % = 1/φ */
+    header .title-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 21px 34px;        /* Fibonacci 21 / 34 */
+    }
+    header .title-top {
+      color: #555;
+      font-size: 1rem;           /* base */
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      line-height: 1.4;
+      margin-bottom: 0.382rem;   /* 1/φ² rem — respiro mínimo */
+    }
+    header h1 {
+      color: #1565C0;
+      font-size: 1.618rem;       /* base × φ */
+      font-weight: 800;
+      line-height: 1.2;
+      text-transform: uppercase;
+      letter-spacing: 0.01em;
+    }
+
+    @media (max-width: 600px) {
+      header { flex-direction: column; }
+      header .logo-container {
+        flex: none;
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e0e8f4;
+        padding: 21px 21px 13px;
+      }
+      header .title-container {
+        padding: 13px 21px 21px;
+        align-items: center;
+        text-align: center;
+      }
+    }
+
+    .info-bar {
+      background: #1565C0;
+      color: #fff;
+      padding: 15px 20px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .container { max-width: 880px; margin: 0 auto; padding: 36px 20px 60px; }
+
+    .section-title { text-align: center; margin-bottom: 28px; }
+    .section-title h2 { color: #1565C0; font-size: 1.55rem; }
+    .section-title p { color: #666; margin-top: 6px; font-size: .95rem; }
+
+    /* Conference cards */
+    .conf-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+      margin-bottom: 36px;
+    }
+    .conf-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 22px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.07);
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .conf-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #1565C0, #FF6B00);
+    }
+    .conf-card:hover { border-color: #1565C0; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(21,101,192,.15); }
+    .conf-card.selected { border-color: #1565C0; background: #E3F2FD; }
+    .conf-card.blocked { cursor: default; opacity: .85; }
+    .conf-card.blocked:hover { border-color: transparent; transform: none; box-shadow: 0 2px 10px rgba(0,0,0,.07); }
+    .blocked-label {
+      display: inline-block;
+      background: #7B1FA2;
+      color: #fff;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: .78rem;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+    .conf-card .date-pill {
+      display: inline-block;
+      background: #FF6B00;
+      color: #fff;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: .78rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .conf-card h3 { color: #1565C0; font-size: 1rem; margin-bottom: 4px; }
+    .conf-card p { color: #666; font-size: .88rem; }
+    .conf-card .reg-count { color: #999; font-size: .78rem; margin-top: 8px; }
+    .check-icon {
+      display: none;
+      position: absolute; top: 14px; right: 14px;
+      background: #1565C0; color: #fff;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      align-items: center; justify-content: center;
+      font-size: 11px;
+    }
+    .conf-card.selected .check-icon { display: flex; }
+
+    /* Registration form */
+    #reg-form {
+      background: #fff;
+      border-radius: 14px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.07);
+      display: none;
+      animation: fadeIn .3s ease;
+    }
+    #reg-form.visible { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    .form-title { font-size: 1.25rem; color: #1565C0; font-weight: 700; margin-bottom: 3px; }
+    .form-sub { color: #777; font-size: .88rem; margin-bottom: 24px; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    @media (max-width: 580px) { .form-grid { grid-template-columns: 1fr; } }
+
+    .form-group { display: flex; flex-direction: column; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    label { font-size: .82rem; font-weight: 700; color: #555; margin-bottom: 5px; }
+    label .req { color: #E53935; }
+
+    input, select {
+      padding: 10px 13px;
+      border: 1.5px solid #DDD;
+      border-radius: 8px;
+      font-size: .94rem;
+      background: #fff;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #1565C0;
+      box-shadow: 0 0 0 3px rgba(21,101,192,.1);
+    }
+
+    .submit-btn {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, #1565C0, #0D47A1);
+      color: #fff;
+      border: none;
+      padding: 13px 28px;
+      border-radius: 8px;
+      font-size: .98rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(21,101,192,.35); }
+    .submit-btn:disabled { opacity: .65; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .error-box {
+      grid-column: 1 / -1;
+      background: #FFEBEE;
+      border-left: 4px solid #E53935;
+      border-radius: 6px;
+      padding: 11px 15px;
+      color: #B71C1C;
+      font-size: .88rem;
+      display: none;
+    }
+    .error-box.show { display: block; }
+
+    /* Success */
+    #success-box {
+      background: #E8F5E9;
+      border-left: 4px solid #2E7D32;
+      border-radius: 10px;
+      padding: 24px 28px;
+      display: none;
+      animation: fadeIn .3s ease;
+    }
+    #success-box.show { display: block; }
+    #success-box h3 { color: #2E7D32; margin-bottom: 6px; font-size: 1.15rem; }
+    #success-box p { color: #444; font-size: .93rem; line-height: 1.5; }
+    .register-another {
+      margin-top: 14px;
+      background: none;
+      border: 2px solid #2E7D32;
+      color: #2E7D32;
+      padding: 8px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: .88rem;
+    }
+
+    footer {
+      background: #0D47A1;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+      font-size: .8rem;
+    }
+    footer span { color: #FFD700; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-container">
+    <img src="/logoo.png" alt="Innova Schools">
+    <span class="campus-tag">Ojo de Agua</span>
+  </div>
+  <div class="title-container">
+    <p class="title-top">Ciclo de Conferencias para la Prevención y el</p>
+    <h1>Bienestar Digital 2026</h1>
+  </div>
+</header>
+
+<div class="info-bar">
+  Fortaleciendo juntos una comunidad escolar segura, informada y responsable.
+</div>
+
+<div class="container">
+  <div class="section-title">
+    <h2>Registro de Padres de Familia</h2>
+    <p>Selecciona la conferencia a la que deseas asistir y completa el formulario</p>
+  </div>
+
+  <div style="margin-bottom: 30px; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+    <img src="/poster.png" alt="Ciclo de Conferencias — Bienestar Digital 2026" style="width: 100%; display: block;">
+  </div>
+
+  <div class="conf-grid" id="conf-grid"></div>
+
+  <div id="reg-form">
+    <div class="form-title">Formulario de Registro</div>
+    <div class="form-sub">Conferencia seleccionada: <strong id="sel-conf-name"></strong></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nombre del padre / madre / tutor <span class="req">*</span></label>
+        <input type="text" id="parent_name" placeholder="Nombre completo">
+      </div>
+      <div class="form-group">
+        <label>Correo electrónico <span class="req">*</span></label>
+        <input type="email" id="email" placeholder="correo@ejemplo.com">
+      </div>
+      <div class="form-group">
+        <label>Teléfono de contacto</label>
+        <input type="tel" id="phone" placeholder="+51 999 000 000">
+      </div>
+      <div class="form-group">
+        <label>Nombre del estudiante <span class="req">*</span></label>
+        <input type="text" id="student_name" placeholder="Nombre completo del estudiante">
+      </div>
+      <div class="form-group">
+        <label>Grado</label>
+        <select id="grade">
+          <option value="">Seleccionar grado...</option>
+          <option>1° Secundaria</option>
+          <option>2° Secundaria</option>
+          <option>3° Secundaria</option>
+        </select>
+      </div>
+      <div class="error-box" id="error-box"></div>
+      <button class="submit-btn" id="submit-btn" onclick="submitReg()">
+        Registrarme a la Conferencia
+      </button>
+    </div>
+  </div>
+
+  <div id="success-box">
+    <h3>¡Registro exitoso!</h3>
+    <p id="success-text"></p>
+    <button class="register-another" onclick="resetForm()">Registrar otro familiar</button>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 <span>Innova Schools Ojo de Agua</span> — Todos los derechos reservados</p>
+  <p style="margin-top:4px;opacity:.75">Construyendo futuros con propósito. Programa de Conferencias 2026</p>
+</footer>
+
+<script>
+  let selectedId = null;
+
+  function fmt(d) {
+    return new Date(d + 'T12:00:00').toLocaleDateString('es-PE', { day: 'numeric', month: 'long' });
+  }
+
+  async function loadConferences() {
+    const res = await fetch('/api/conferences');
+    const list = await res.json();
+    const grid = document.getElementById('conf-grid');
+    grid.innerHTML = list.map(c => `
+      <div class="conf-card${c.registration_blocked ? ' blocked' : ''}" id="card-${c.id}" ${c.registration_blocked ? '' : `onclick="pick(${c.id}, '${esc(c.name)}')"`}>
+        <div class="date-pill">${fmt(c.date)}</div>
+        <h3>${esc(c.name)}</h3>
+        <p>${esc(c.description || 'Ciclo de Conferencias Innova Schools')}</p>
+        ${c.registration_blocked && c.blocked_label ? `<div class="blocked-label">🎓 ${esc(c.blocked_label)}</div>` : `<div class="reg-count">${c.registrations_count} padre(s) registrado(s)</div>`}
+        <div class="check-icon">✓</div>
+      </div>
+    `).join('');
+  }
+
+  function pick(id, name) {
+    document.querySelectorAll('.conf-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('card-' + id).classList.add('selected');
+    selectedId = id;
+    document.getElementById('sel-conf-name').textContent = name;
+    document.getElementById('reg-form').classList.add('visible');
+    document.getElementById('success-box').classList.remove('show');
+    document.getElementById('error-box').classList.remove('show');
+    document.getElementById('reg-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  async function submitReg() {
+    if (!selectedId) return;
+    const parent_name  = document.getElementById('parent_name').value.trim();
+    const email        = document.getElementById('email').value.trim();
+    const phone        = document.getElementById('phone').value.trim();
+    const student_name = document.getElementById('student_name').value.trim();
+    const grade        = document.getElementById('grade').value;
+
+    if (!parent_name || !email || !student_name) return showError('Por favor completa los campos requeridos.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showError('Ingresa un correo electrónico válido.');
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conference_id: selectedId, parent_name, email, phone, student_name, grade })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('reg-form').classList.remove('visible');
+        document.getElementById('success-box').classList.add('show');
+        document.getElementById('success-text').textContent =
+          `¡Gracias ${parent_name}! Se envió un correo de confirmación a ${email}. Recibirá recordatorios automáticos 1 semana y 1 día antes de la conferencia.`;
+        loadConferences();
+      } else {
+        showError(data.error || 'Error al procesar el registro. Intenta de nuevo.');
+      }
+    } catch {
+      showError('Error de conexión. Verifica tu internet e intenta de nuevo.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Registrarme a la Conferencia';
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-box');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  function resetForm() {
+    document.querySelectorAll('.conf-card').forEach(c => c.classList.remove('selected'));
+    selectedId = null;
+    ['parent_name','email','phone','student_name'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('grade').value = '';
+    document.getElementById('success-box').classList.remove('show');
+    document.getElementById('reg-form').classList.remove('visible');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  loadConferences();
+</script>
+</body>
+</html>
