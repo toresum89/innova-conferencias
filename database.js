@@ -30,6 +30,10 @@ async function initDB() {
     );
   `);
 
+  await pool.query(
+    `UPDATE conferences SET registration_blocked = true, blocked_label = 'Evento para estudiantes' WHERE date = '2026-06-18'`
+  );
+
   const { rows } = await pool.query('SELECT COUNT(*) as c FROM conferences');
   if (parseInt(rows[0].c) === 0) {
     await pool.query(
@@ -38,7 +42,7 @@ async function initDB() {
     );
     await pool.query(
       'INSERT INTO conferences (name, date, description, registration_blocked, blocked_label) VALUES ($1, $2, $3, $4, $5)',
-      ['Las Redes Sociales en las Infancias y Adolescencias', '2026-06-18', '9:30 A.M. — Reflexionaremos sobre el uso responsable de las redes sociales, la identidad digital, la privacidad y el impacto de nuestras acciones en línea.', true, 'Conferencia para Alumnos']
+      ['Las Redes Sociales en las Infancias y Adolescencias', '2026-06-18', '9:30 A.M. — Reflexionaremos sobre el uso responsable de las redes sociales, la identidad digital, la privacidad y el impacto de nuestras acciones en línea.', true, 'Evento para estudiantes']
     );
     await pool.query(
       'INSERT INTO conferences (name, date, description) VALUES ($1, $2, $3)',
