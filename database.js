@@ -30,6 +30,9 @@ async function initDB() {
     );
   `);
 
+  await pool.query(`ALTER TABLE conferences ADD COLUMN IF NOT EXISTS registration_blocked BOOLEAN DEFAULT FALSE`);
+  await pool.query(`ALTER TABLE conferences ADD COLUMN IF NOT EXISTS blocked_label TEXT`);
+
   await pool.query(
     `UPDATE conferences SET registration_blocked = true, blocked_label = 'Evento para estudiantes' WHERE date = '2026-06-18'`
   );
